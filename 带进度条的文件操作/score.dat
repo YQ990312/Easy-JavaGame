@@ -1,0 +1,405 @@
+使用java实现在下载文件的过程中显示进度条
+各位牛人：
+·       最近需要实现一个进度条，在单击下载按钮后，开始下载，并显示进度条，进度条我是另起了个Thread,代码是
+                             ProgressBarThread progressBarThread = new ProgressBarThread(progressBar);
+                             progressBarThread.start();
+                          后面是使用HttpClient现在文件
+  ProgressBarThread.java用于自动将进度条的值进行递增，里面的代码我参考了网上用的代码，使用display的异步去递增进度条，然后在监听按钮的download.java中去下载文件，得到的结果是进度条显示但不递增，文件下载成功就隐藏了，在网上查了很多都没法解决，我是实在没办法了，求高手帮忙！
+ 
+
+
+
+Android okHttp文件下载并带进度条的demo（简单工具类）
+
+ CSDN CSDN推荐
+获取下载文件的大小，从而设置下载进度条
+
+Windows客户端开发--URLDownloadToFile下载文件进度条
+
+七牛上传回调显示进度条方法。
+
+java对七牛云的简单操作(对象存储文件上传)
+
+okhttputils显示下载进度
+
+zyb134506zyb134506
+10-30 13:30
+等级  Bbs5
+1楼
+Android还是J2SE？
+Android的控件更新是需要放到主线程里做的。
+J2SE的倒是没注意，但看你的ProgressBarThread这个类并没有传递获取文件大小及已下载大小的接口。
+封装了okhttp的网络框架，支持大文件上传下载，上传进度...
+
+2
+crazypandariycrazypandariy
+10-30 14:44
+等级  Bbs5
+2楼
+我把我的想法写成一个简单的例子吧：
+package test;
+
+
+
+import java.util.ArrayList;
+
+
+
+public class ProgressBarThread implements Runnable{
+
+
+
+	private ArrayList<Integer> proList = new ArrayList<Integer>();
+
+	private int progress;//当前进度
+
+	private int totalSize;//总大小
+
+	private boolean run = true;
+
+	
+
+	public ProgressBarThread(int totalSize){
+
+		this.totalSize = totalSize;
+
+		//TODO 创建进度条
+
+	}
+
+	
+
+	/**
+
+	 * @param progress 进度
+
+	 */
+
+	public void updateProgress(int progress){
+
+		synchronized (this.proList) {
+
+			if(this.run){
+
+				this.proList.add(progress);
+
+				this.proList.notify();
+
+			}
+
+		}
+
+	}
+
+	
+
+	public void finish(){
+
+		this.run = false;
+
+		//关闭进度条
+
+	}
+
+	
+
+	@Override
+
+	public void run() {
+
+		synchronized (this.proList) {
+
+			try {
+
+				while (this.run) {
+
+					if(this.proList.size()==0){
+
+						this.proList.wait();
+
+					}
+
+					synchronized (proList) {
+
+						this.progress += this.proList.remove(0);
+
+						//TODO 更新进度条
+
+						System.err.println("当前进度："+(this.progress/this.totalSize*100)+"%");
+
+						
+
+					}
+
+				}
+
+				System.err.println("下载完成");
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		}
+
+	}
+
+}
+
+
+public static void main(String[] args) {
+
+		try {
+
+			File file = new File("源文件");
+
+			FileInputStream fis = new FileInputStream(file);
+
+			FileOutputStream fos = new FileOutputStream("文件保存路径");
+
+			ProgressBarThread pbt = new ProgressBarThread((int)file.length());//创建进度条
+
+			new Thread(pbt).start();//开启线程，刷新进度条
+
+			byte[] buf = new byte[1024];
+
+			int size = 0;
+
+			while((size = fis.read(buf))>-1){//循环读取
+
+				fos.write(buf, 0, size);
+
+				pbt.updateProgress(size);//写完一次，更新进度条
+
+			}
+
+			pbt.finish();//文件读取完成，关闭进度条
+
+			fos.flush();
+
+			fos.close();
+
+			fis.close();
+
+		} catch (FileNotFoundException e) {
+
+			e.printStackTrace();
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+后台操作，前台显示进度条。
+
+2
+打开APP，查看全部评论
+Java JProgressBar类（进度条）
+qq_36761831
+4182
+2018-08-07
+Java文件下载，HTML进度条实时刷新进度
+fengsheng5210
+8677
+2018-02-10
+java 做一个真的进度条去实时获取方法进行状态
+Alice_qixin
+7681
+2017-11-16
+java进度条
+qq_41482046
+308
+2018-07-25
+使用Java快速实现进度条
+kakashi8841
+44144
+2011-05-03
+Java怎样获得进度条进度
+A1305921931813059219
+314
+2018-09-01
+实现字符型进度条（pyton、java）
+azhao_dn
+8815
+2013-12-12
+用线程实现进度条显示
+a315733071
+4
+2013-01-21
+文件下载显示进度条
+u013038643
+6714
+2017-03-05
+Android开发之文件下载(通知栏中显示进度条，状态信息等)
+FlyingSnow2211
+3740
+2015-09-17
+Java Swing程序开发—右下角显示进度条
+T_27080901
+2623
+2015-04-15
+异步下载文件更新进度条的步骤
+liangxiaoming_1987
+1104
+2017-04-26
+java实现下载时进度条提示
+chaizepeng
+1202
+2018-12-05
+Java实现进度条JProgressBar设置颜色，变色进度条
+u014714713
+4242
+2016-12-02
+java如何做一个进度条展示
+w2353256662
+2286
+2018-01-14
+Java网络编程之单线程下载文件设置显示进度
+mynamepg
+937
+2018-04-03
+【面试题目】Java文件下载（限速、进度条）
+R3lish
+4570
+2016-07-14
+JAVA文件下载（限速、进度条）
+wu858773457
+46
+2017-12-14
+【Android开发】范例1-显示在标题上的进度条
+u013517797
+1297
+2015-04-10
+swing 下载文件时的进度条
+hw1287789687
+65
+2014-03-23
+java 进度条不能刷新解决方案 （已更新一次）
+hza419763578
+1531
+2018-06-14
+java上传文件带进度条学习记录
+weixin_37770023
+2863
+2018-05-10
+Java中如何实现进度条效果
+yy873259480
+10045
+2012-03-30
+java实现进度条
+xht1351549230
+15
+2016-08-30
+生成进度条（动态生成文件，并前端显示生成进度）
+smollsnail
+3553
+2017-11-22
+Android实现Service下载文件，Notification显示下载进度
+yaochangliang159
+7571
+2016-05-28
+下载文件更新进度条
+qq_27910389
+1538
+2017-05-23
+Handler初体验（一）——下载文件并更新进度条
+qq_36407875
+489
+2017-11-11
+Java Swing 之进度条的使用（简单版）
+Tobin_Xu
+738
+2017-12-08
+Java带进度多线程下载文件
+u013755987
+5317
+2016-02-18
+Java web 中实现 文件上传 进度条显示
+chengwangbaiko
+7562
+2017-05-11
+java web进度条
+chjw8221
+895
+2010-04-19
+java编写一个进度条
+tan313
+3199
+2014-11-01
+java实时进度条原理
+shendeguang
+7718
+2012-11-22
+Ajax请求过程中显示“进度”的简单实现
+xiaochongwu
+9
+2016-04-22
+Java语言 浏览器下载文件时没有进度条和预计文件大小
+u010865811
+1249
+2018-04-09
+Java实现显示进度条
+wlnmyr
+114
+2010-04-24
+【JAVA】Java桌面程序绘制进度条
+sds15732622190
+1688
+2017-10-18
+Java实现进度条
+Alpssoul
+986
+2015-10-11
+Java 进度条控件的使用
+kehyuanyu
+12496
+2014-05-19
+HttpURLConnection下载文件带进度Code
+RichieZhu
+2761
+2016-09-08
+实现FTP下载进度展示
+h1534589653
+578
+2017-09-14
+python实现socket上传下载文件-进度条显示
+kellyseeme
+3533
+2016-05-21
+Wget 下载进度条是如何实现的？
+WBZH
+4043
+2016-10-04
+OKHTTP_三行代码实现文件下载（dialog显示进度）
+fkgjdkblxckvbxbgb
+2848
+2017-07-22
+JavaSwing_2.11: JProgressBar（进度条）
+xietansheng
+5874
+2017-07-16
+java进度条代码
+yangyanjava
+954
+2016-03-11
+JAVA SWT怎么开一个进度条（其中有具体要求）
+sasuke38
+89
+2011-07-01
+java进度条显示、终止
+qq_35348457
+1142
+2018-01-29
+Java多线程断点下载多文件（窗口程序带进度条）
+sunroyi666
+1234
+2016-08-15
+java web监控文件下载进度
+dengwenwei121
+2747
+2018-01-30
+C# Winform下载文件并显示进度条
